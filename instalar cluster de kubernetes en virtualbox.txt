@@ -1,0 +1,146 @@
+
+192.168.86.200	master.k8s
+192.168.86.201	node1.k8s
+192.168.86.203	node2.k8s
+c0rA2410
+/*
+https://gist.github.com/patrickhuber/e600629a69fec64cfb45c63a23df4b3c
+
+
+
+install kubernetes 1.6 on centos 7.3
+Install kubelet, kubeadm, docker, kubectl and kubernetes-cni
+1. Install Yum Repo 
+*/
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=http://yum.kubernetes.io/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+/*
+2. Disable SELinux
+setenforce 0
+3. Install from yum */ 
+yum install -y docker kubelet kubeadm kubectl kubernetes-cni
+/*
+4. Enable docker and kubelet */ 
+
+systemctl enable docker && systemctl start docker
+systemctl enable kubelet && systemctl start kubelet
+
+/*
+Si manda error al habilitar docker ejecutar el siguiente procedimeinto :
+
+https://jhooq.com/docker-daemon-centos/
+*/ 
+/*
+You also need to enable the net.bridge.bridge-nf-call-iptables kernel option by running the following commands:
+*/
+sysctl -w net.bridge.bridge-nf-call-iptables=1
+echo "net.bridge.bridge-nf-call-iptables=1" > /etc/sysctl.d/k8s.conf
+
+/* And, disable swap with the following command:*/
+
+swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+
+/*
+Setting up the worker node
+You will be setup the worker node by cloning the master VM just prepared 
+to avoid the repetitive process. First, you need to shutdown the VM:
+*/
+shutdown now
+
+/*From the VirtualBox UI, select Clone and enter the name of the new
+ machine (for example, k8s-node1). Make sure to check the Reinitialize
+ the MAC address of all network card, Full clone, and Current machine 
+ state options during the cloning process. After cloning VM completes,
+ you can start all VMs.
+
+Since the cloned worker node have the same hostname as the master node, 
+you will log into the worker node and run the following commands to 
+change the hostname: */
+
+hostnamectl --static set-hostname node1.k8s
+/* Next, you will edit the entries in /etc/hosts on all of master 
+and worker nodes. You can get each node’s IP by logging into the 
+node as root and running ip addr The IP address in the enp0s3 
+network adapter will be the entries used in the /etc/hosts, 
+such as the following: */
+
+192.168.86.200	master.k8s
+192.168.86.201	node1.k8s
+192.168.86.203	node2.k8s
+
+
+/* Setting up Kubernetes Control Plane on the master node
+You can use the kubeadm tool to initialize the Kubernetes master 
+and deploy all the Control Plane components, including etcd, 
+the API server, Scheduler, kube-proxy and Control Manager. 
+You will need to take a note of the last line of the output from
+ running the following command.*/
+ 
+/* en cada nodo si se rebootea o inicia hayq ue correr nuevamente los sig comandos*/
+systemctl enable docker && systemctl start docker
+systemctl enable kubelet && systemctl start kubelet 
+ 
+
+sysctl -w net.bridge.bridge-nf-call-iptables=1
+echo "net.bridge.bridge-nf-call-iptables=1" > /etc/sysctl.d/k8s.conf
+
+swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+
+
+/* luego ejecutar segun el procedimeinto */ 
+
+kubeadm init
+
+/*You can now configure kubectl and test it by listing pods in the
+ kube-system namespace on the master node, shown in the following:*/
+
+export KUBECONFIG=/etc/kubernetes/admin.conf
+kubectl get po -n kube-system
+
+/*Setting up the worker node with kubeadm
+You will log into the worker node as root, and run the last part 
+that you took note of, when you ran the kubeadm initon the master node.*/
+
+kubeadm join --token ... --discovery-token-ca-cert-hash ...
+
+/*You can now confirm that the worker node is registered by running
+ the command. The result will indicate STATUS: NotReady since the 
+ container network plugin hasn’t been deployed in the cluster yet.*/
+
+kubectl get nodes
+
+/*Deploying the Weave Net container network plugin
+There are several CNI addons available listed 
+at https://kubernetes.io/docs/concepts/cluster-administration/addons/. 
+You can deploy the Weave Net CNI plugin by running the following command.*/
+
+kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')
+/* You can check again if the worker node indicates STATUS: Ready . 
+Also, you can check all system pods running in the cluster.*/
+
+kubectl get po --all-namespaces
+
+/*Configuring kubectl on your local machine
+Instead of logging into the master node and using kubectl there, 
+you will want to configure the kubectl on your local machine to 
+talk to the master node directly, with the following command on 
+your local machine. You should replace 172.30.10.6 with the IP 
+of your master node.*/
+
+scp root@172.30.10.6:/etc/kubernetes/admin.conf ~/.kube/config2
+export KUBECONFIG=~/.kube/config2
+
+/*Conclusions
+Even though Kubernetes provides a single-node cluster called minikube for you to experience this platform. In most testing and production environment setup will be multi-node clusters and this article shows you how to do that.
+
+Additionally, you can also deploy the Kubernetes dashboard by referring to the links below: https://github.com/kubernetes/dashboard. You can visualize the metric and graphs about the cluster and deployed Kubernetes components.
+
+*/

@@ -1,0 +1,103 @@
+
+Despues de instalar ubuntu server 20.04 con ssh OPEN server :
+user :k8user
+c0rA2410
+/etc/hosts/hosts
+
+192.168.86.226 k8master
+192.168.86.227 k8worker1
+192.168.86.228 k8worker2
+192.168.86.233 k8worker3
+
+************************************
+
+INSTALAR DOCKER :
+
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install docker.io -y
+
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+
+INSTALAR KUBERNETES :
+
+sudo apt install apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" >> ~/kubernetes.list
+
+sudo mv ~/kubernetes.list /etc/apt/sources.list.d
+
+
+sudo apt install kubelet
+sudo apt install kubeadm
+sudo apt install kubectl
+sudo apt-get install -y kubernetes-cni
+sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+
+DESHABILIARNDO SWAP MEMORY
+
+sudo swapoff -a
+edit /etc/fstab to remove the swap entry (comentarla) 
+
+systemctl enable kubelet
+systemctl start kubelet
+
+como root
+kubeadm init
+************************************************************************\
+SALIDA COMANDIO kubeadm init 
+************************************************************************
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.86.223:6443 --token v6zdzo.ztxc3s1nyfqire4w \
+        --discovery-token-ca-cert-hash sha256:967f129c5662a3f6131487ccc62101e5e941a80c990cd3794736ad0036a02ec2
+
+************************************************************************\
+************************************************************************
+
+
+
+IMPLEMENTAR EL NODO DE NETWORKING Weavenet :
+
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+
+**********************************************************************\
+INSTALAR WORKER
+************************************************************************
+Instalar todo lo relacionado a 
+DOCKER 
+KUBERNETES 
+
+Ejecutar el comando de la salida de kubeadm init :
+
+
+Si se reinicia el nodo hay que levantar los servicios 
+
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+sudo swapoff -a
+systemctl enable kubelet
+systemctl start kubelet

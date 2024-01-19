@@ -1,0 +1,121 @@
+
+Despues de instalar ubuntu server 20.04 con ssh OPEN server :
+user :k8user
+c0rA2410
+/etc/hosts/hosts
+192.168.86.216 k8master
+192.186.86.217 k8worker1
+************************************
+
+INSTALAR DOCKER :
+
+sudo apt-get upgrade
+sudo apt-get update
+sudo apt-get install docker.io -y
+
+
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+
+INSTALAR KUBERNETES :
+
+sudo apt install apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" >> ~/kubernetes.list
+
+sudo mv ~/kubernetes.list /etc/apt/sources.list.d
+
+sudo apt update
+
+sudo apt install kubelet
+
+sudo apt install kubeadm
+
+sudo apt install kubectl
+
+sudo apt-get install -y kubernetes-cni
+
+sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+
+DESHABILIARNDO SWAP MEMORY
+
+sudo swapoff -a
+systemctl enable kubelet
+systemctl start kubelet
+
+sudo swapoff -a
+edit /etc/fstab to remove the swap entry
+
+kubeadm init
+
+
+IMPLEMENTAR EL NODO DE NETWORKING Weavenet :
+
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+
+kubectl get nodes
+
+kubectl get pods --all-namespaces
+
+
+************************************************************************\
+INSTALAR WORKER
+************************************************************************
+
+Despues de instalar ubuntu server 20.04 con ssh OPEN server :
+user :k8user
+c0rA2410
+/etc/hosts/hosts
+192.168.86.216 k8master
+192.186.86.217 k8worker1
+************************************
+Se instala con los mismos comandos docker y kubernetes 
+
+**********************************************************************
+Levantar la VMmaster alsmost READY y ejecutar : 
+**********************************************************************
+sudo swapoff -a
+systemctl enable kubelet
+systemctl start kubelet
+
+kubeadm init
+
+y saldran las instrucciones para ejeucatr comandos y para adicionar a los workers. 
+
+Ahora se debe  instalar el contenedor para  la RED 
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+
+****************************************************************************************
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.86.216:6443 --token m0cibb.sd2mnwe40u8r8iud \
+        --discovery-token-ca-cert-hash sha256:e137c95c434ed211293edc76bbfc3b2de4e6d2434f2ac5f743aff1ebc6a545fb
+		***********************************************************************************
+		
+		
+		
+		
+	
+
+		
